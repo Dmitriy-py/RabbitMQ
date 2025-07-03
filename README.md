@@ -78,4 +78,87 @@ channel.start_consuming()
 ![Снимок экрана (1133)](https://github.com/user-attachments/assets/8092faa6-115f-4786-a923-1f27a1af29e5)
 
 
+## Задание 3. Подготовка HA кластера
 
+Используя Vagrant или VirtualBox, создайте вторую виртуальную машину и установите RabbitMQ. Добавьте в файл hosts название и IP-адрес каждой машины, чтобы машины могли видеть друг друга по имени.
+
+Пример содержимого hosts файла:
+
+$ cat /etc/hosts
+192.168.0.10 rmq01
+192.168.0.11 rmq02
+После этого ваши машины могут пинговаться по имени.
+
+Затем объедините две машины в кластер и создайте политику ha-all на все очереди.
+
+В качестве решения домашнего задания приложите скриншоты из веб-интерфейса с информацией о доступных нодах в кластере и включённой политикой.
+
+Также приложите вывод команды с двух нод:
+
+$ rabbitmqctl cluster_status
+Для закрепления материала снова запустите скрипт producer.py и приложите скриншот выполнения команды на каждой из нод:
+
+$ rabbitmqadmin get queue='hello'
+После чего попробуйте отключить одну из нод, желательно ту, к которой подключались из скрипта, затем поправьте параметры подключения в скрипте consumer.py на вторую ноду и запустите его.
+
+Приложите скриншот результата работы второго скрипта.
+
+
+## Ответ:
+
+### ` Vagrantfile `
+
+```
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+
+  config.vm.define "rmq01" do |rmq01|
+    rmq01.vm.hostname = "rmq01"
+    rmq01.vm.network "private_network", ip: "192.168.56.10"
+    rmq01.vm.provider "virtualbox" do |vb|
+      vb.memory = "4024"
+      vb.cpus = 2
+    end
+    rmq01.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get install -y rabbitmq-server
+      sudo rabbitmq-plugins enable rabbitmq_management
+      sudo rabbitmqctl add_user admin admin
+      sudo rabbitmqctl set_user_tags admin administrator
+      sudo rabbitmqctl set_permissions -p / admin ".*" ".*" ".*"
+    SHELL
+  end
+
+  config.vm.define "rmq02" do |rmq02|
+    rmq02.vm.hostname = "rmq02"
+    rmq02.vm.network "private_network", ip: "192.168.56.11"
+    rmq02.vm.provider "virtualbox" do |vb|
+      vb.memory = "4024"
+      vb.cpus = 2
+    end
+    rmq02.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get install -y rabbitmq-server
+      sudo rabbitmq-plugins enable rabbitmq_management
+      sudo rabbitmqctl add_user admin admin
+      sudo rabbitmqctl set_user_tags admin administrator
+      sudo rabbitmqctl set_permissions -p / admin ".*" ".*" ".*"
+    SHELL
+  end
+
+end
+```
+
+![Снимок экрана (1136)](https://github.com/user-attachments/assets/cc608539-008b-4825-8f7e-046d19778669)
+
+![Снимок экрана (1138)](https://github.com/user-attachments/assets/4464cbb3-26de-4ce5-9dde-d675512eae7b)
+
+![Снимок экрана (1140)](https://github.com/user-attachments/assets/feb44921-7744-498a-9fbd-9d9f282d625c)
+
+![Снимок экрана (1139)](https://github.com/user-attachments/assets/31c0de6d-bd25-4bb1-b790-2f49b52e81b9)
+
+![Снимок экрана (1141)](https://github.com/user-attachments/assets/3392520c-54b8-4e99-ab2a-16c631442f76)
+
+![Снимок экрана (1144)](https://github.com/user-attachments/assets/aff95e7e-7525-46f3-b4c0-5266256032c3)
+
+![Снимок экрана (1145)](https://github.com/user-attachments/assets/9929a749-2830-405a-981d-b411307953f2)
